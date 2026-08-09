@@ -39,7 +39,57 @@ Only students with a verified college email (e.g. `@gehu.ac.in`, `@geu.ac.in`) c
 ---
 
 ## 📁 Folder Structure
-
+campushub/
+├── server/
+│   ├── config/
+│   │   └── database.js          # Sequelize connection (MySQL/SQLite)
+│   ├── controllers/
+│   │   ├── authController.js    # Register, login, email verification, profile
+│   │   ├── reportController.js  # Reports & user blocking
+│   │   └── ...                  # listing, roommate, chat, review, admin, payment, analytics
+│   ├── middleware/
+│   │   ├── authMiddleware.js    # JWT protect + admin guard
+│   │   ├── errorMiddleware.js   # notFound + centralized error handler
+│   │   ├── uploadMiddleware.js  # Multer config for image uploads
+│   │   └── validationMiddleware.js
+│   ├── models/
+│   │   ├── User.js
+│   │   ├── Listing.js
+│   │   ├── Roommate.js
+│   │   ├── Chat.js
+│   │   ├── Message.js
+│   │   ├── Review.js
+│   │   ├── Payment.js
+│   │   ├── Report.js
+│   │   ├── BlockedUser.js
+│   │   └── index.js             # Model associations
+│   ├── routes/
+│   │   ├── authRoutes.js
+│   │   ├── listingRoutes.js
+│   │   ├── roommateRoutes.js
+│   │   ├── chatRoutes.js
+│   │   ├── reviewRoutes.js
+│   │   ├── adminRoutes.js
+│   │   ├── paymentRoutes.js
+│   │   ├── analyticsRoutes.js
+│   │   └── reportRoutes.js
+│   ├── services/
+│   │   └── emailService.js      # All transactional email templates
+│   ├── socket/
+│   │   └── socketHandler.js     # Real-time chat event handling
+│   ├── utils/
+│   │   ├── generateToken.js
+│   │   └── logger.js
+│   ├── uploads/                 # User-uploaded images (gitignored except default avatar)
+│   ├── .env                     # Environment config (never committed)
+│   └── server.js                # App entry point
+│
+├── client/                      # React frontend
+│   ├── src/
+│   └── ...
+│
+├── .gitignore
+└── README.md
 ---
 
 ## ⚙️ Environment Variables
