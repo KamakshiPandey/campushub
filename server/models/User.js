@@ -24,6 +24,18 @@ const User = sequelize.define('User', {
     type: DataTypes.STRING,
     allowNull: false,
   },
+    isVerified: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: true, // set false if you want email verification flow
+    },
+  resetPasswordToken: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  resetPasswordExpiry: {
+    type: DataTypes.DATE,
+    allowNull: true,
+  },
   role: {
     type: DataTypes.ENUM('student', 'admin'),
     defaultValue: 'student',

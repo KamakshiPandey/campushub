@@ -1,7 +1,8 @@
 const { User, Listing, Roommate, Review } = require('../models');
 const generateToken = require('../utils/generateToken');
-const { sendWelcomeEmail } = require('../services/emailService');
-
+const { sendWelcomeEmail, sendVerificationEmail, sendPasswordResetEmail } = require('../services/emailService');
+const crypto = require('crypto');
+const bcrypt = require('bcryptjs');
 // @desc    Register new user
 // @route   POST /api/auth/register
 // @access  Public
@@ -64,33 +65,87 @@ const registerUser = async (req, res, next) => {
 // @desc    Authenticate user & get token
 // @route   POST /api/auth/login
 // @access  Public
-const loginUser = async (req, res, next) => {
+// const loginUser = async (req, res, next) => {
+//   try {
+//     const { email, password } = req.body;
+
+//     const user = await User.findOne({ where: { email } });
+
+//     if (!user) {
+//       return res.status(401).json({ success: false, message: 'Invalid email or password' });
+//     }
+
+//     if (user.isBanned) {
+//       return res.status(403).json({ success: false, message: 'Account is banned by administrator' });
+//     }
+
+//     if (!user.isVerified && !user.resetPasswordToken) {
+//       return res.status(403).json({
+//         success: false,
+//         message: 'Please verify your email before logging in.',
+//       });
+//     }
+
+//     const isMatch = await user.matchPassword(password);
+//     if (!isMatch) {
+//       return res.status(401).json({ success: false, message: 'Invalid email or password' });
+//     }
+
+//     res.json({
+//       success: true,
+//       user: {
+//         id: user.id,
+//         name: user.name,
+//         email: user.email,
+//         role: user.role,
+//         college: user.college,
+//         avatar: user.avatar,
+//         phone: user.phone,
+//         bio: user.bio,
+//       },
+//       token: generateToken(user.id),
+//     });
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    // 1. Find user
     const user = await User.findOne({ where: { email } });
 
+    // ✅ ADD DEBUG HERE
+    console.log("==== LOGIN DEBUG ====");
+    console.log("Email:", email);
+    console.log("User found:", !!user);
+
+    if (user) {
+      console.log("isVerified:", user.isVerified);
+      console.log("Stored password hash:", user.password);
+    }
+
+    // 2. If user not found
     if (!user) {
-      return res.status(401).json({ success: false, message: 'Invalid email or password' });
+      return res.status(400).json({ message: "User not found" });
     }
 
-    if (user.isBanned) {
-      return res.status(403).json({ success: false, message: 'Account is banned by administrator' });
-    }
+    // 3. Check password
+    const isMatch = await bcrypt.compare(password, user.password);
+    console.log("Password match:", isMatch);
 
-    if (!user.isVerified) {
-      return res.status(403).json({
-        success: false,
-        message: 'Please verify your email before logging in. Check your inbox for the verification link.',
-      });
-    }
-
-    const isMatch = await user.matchPassword(password);
     if (!isMatch) {
-      return res.status(401).json({ success: false, message: 'Invalid email or password' });
+      return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    res.json({
+    // 4. Check verification (THIS is likely causing 403)
+    if (!user.isVerified) {
+      return res.status(403).json({ message: "Please verify your email" });
+    }
+
+    // 5. Success login
+    res.status(200).json({
       success: true,
       user: {
         id: user.id,
@@ -104,8 +159,10 @@ const loginUser = async (req, res, next) => {
       },
       token: generateToken(user.id),
     });
+
   } catch (error) {
-    next(error);
+    console.log(error);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -283,6 +340,79 @@ const resendVerification = async (req, res, next) => {
     next(error);
   }
 };
+// @desc    Request password reset (send email with token)
+// @route   POST /api/auth/forgot-password
+// @access  Public
+const forgotPassword = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ where: { email } });
+
+    // Always return success, even if user doesn't exist — prevents email enumeration
+    if (!user) {
+      return res.json({
+        success: true,
+        message: 'If an account exists with that email, a reset link has been sent.',
+      });
+    }
+
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    user.resetPasswordToken = resetToken;
+    user.resetPasswordExpiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+    await user.save();
+
+    sendPasswordResetEmail(user, resetToken);
+
+    res.json({
+      success: true,
+      message: 'If an account exists with that email, a reset link has been sent.',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Reset password using token
+// @route   POST /api/auth/reset-password/:token
+// @access  Public
+const resetPassword = async (req, res, next) => {
+  try {
+    const { token } = req.params;
+    const { password } = req.body;
+
+    if (!password || password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be 6 or more characters',
+      });
+    }
+
+    const user = await User.findOne({ where: { resetPasswordToken: token } });
+
+    if (!user || user.resetPasswordExpiry < new Date()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid or expired reset link',
+      });
+    }
+
+    // ✅ FIX: DO NOT HASH HERE
+    user.password = password;
+
+    user.isVerified = true;
+    user.resetPasswordToken = null;
+    user.resetPasswordExpiry = null;
+
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'Password reset successfully. You can now log in.',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
 module.exports = {
   registerUser,
@@ -292,4 +422,6 @@ module.exports = {
   resendVerification,
   updateUserProfile,
   getPublicUserProfile,
+  forgotPassword,
+  resetPassword,
 };

@@ -51,6 +51,35 @@ const sendWelcomeEmail = async (user) => {
     logger.error('Error sending welcome email:', error.message);
   }
 };
+const sendPasswordResetEmail = async (user, resetToken) => {
+  try {
+     console.log("📧 Sending reset email to:", user.email);
+    const transporter = createTransporter();
+    const resetUrl = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
+    const mailOptions = {
+      from: `"${process.env.FROM_NAME || 'CampusHub'}" <${process.env.FROM_EMAIL || 'no-reply@campushub.com'}>`,
+      to: user.email,
+      subject: 'Reset your CampusHub password 🔑',
+      html: `
+        <div style="font-family: Arial, sans-serif; padding: 20px; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 8px;">
+          <h2 style="color: #4f46e5;">Password Reset Request</h2>
+          <p>Hi ${user.name},</p>
+          <p>We received a request to reset your CampusHub password. Click below to choose a new one:</p>
+          <p style="margin: 25px 0;">
+            <a href="${resetUrl}" style="background: #4f46e5; color: #fff; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold;">
+              Reset My Password
+            </a>
+          </p>
+          <p style="font-size: 13px; color: #64748b;">Or paste this link into your browser:<br>${resetUrl}</p>
+          <p style="margin-top: 20px; font-size: 12px; color: #64748b;">This link expires in 1 hour. If you didn't request this, you can safely ignore this email — your password will not be changed.</p>
+        </div>
+      `,
+    };
+    await transporter.sendMail(mailOptions);
+  } catch (error) {
+    logger.error('Error sending password reset email:', error.message);
+  }
+};
 const sendVerificationEmail = async (user, verificationToken) => {
   try {
     const transporter = createTransporter();
@@ -73,9 +102,10 @@ const sendVerificationEmail = async (user, verificationToken) => {
         </div>
       `,
     };
-    await transporter.sendMail(mailOptions);
+    const info = await transporter.sendMail(mailOptions);
+console.log("✅ Email sent successfully:", info);
   } catch (error) {
-    logger.error('Error sending verification email:', error.message);
+    console.error("❌ FULL EMAIL ERROR:", error);
   }
 };
 
@@ -198,5 +228,6 @@ module.exports = {
   sendMilestoneAlert,
   sendPaymentSuccessfulEmail,
   sendItemSoldEmail,
+  sendPasswordResetEmail,
   sendItemNoLongerAvailableEmail,
 };

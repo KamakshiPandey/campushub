@@ -13,6 +13,8 @@ import AdminRoute from './components/common/AdminRoute';
 // Pages
 import Home from './pages/Home';
 import Login from './pages/Login';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import Register from './pages/Register';
 import Marketplace from './pages/Marketplace';
 import ListingDetail from './pages/ListingDetail';
@@ -49,6 +51,8 @@ function App() {
                 <Route path="/" element={<Home />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
+                 <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                <Route path="/reset-password/:token" element={<ResetPasswordPage />}/>
                 <Route path="/marketplace" element={<Marketplace />} />
                 <Route path="/marketplace/:id" element={<ListingDetail />} />
                 <Route
