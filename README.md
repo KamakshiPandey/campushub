@@ -39,3 +39,89 @@ Only students with a verified college email (e.g. `@gehu.ac.in`, `@geu.ac.in`) c
 ---
 
 ## 📁 Folder Structure
+
+---
+
+## ⚙️ Environment Variables
+
+Create a `server/.env` file with the following:
+
+```env
+PORT=5000
+NODE_ENV=development
+CLIENT_URL=http://localhost:3000
+
+DB_DIALECT=mysql
+DB_HOST=localhost
+DB_PORT=3306
+DB_NAME=campushub_db
+DB_USER=root
+DB_PASSWORD=your_mysql_password
+
+JWT_SECRET=your_jwt_secret
+JWT_EXPIRE=30d
+
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your_email@gmail.com
+SMTP_PASS=your_gmail_app_password
+FROM_EMAIL=no-reply@campushub.com
+FROM_NAME=CampusHub Team
+
+COLLEGE_EMAIL_DOMAINS=@gehu.ac.in,@geu.ac.in
+```
+
+> ⚠️ Never commit `.env` — it's excluded via `.gitignore`. `DB_DIALECT` can be omitted to fall back to a local SQLite file for zero-config setup.
+
+---
+
+## 🚀 Getting Started
+
+### 1. Clone the repo
+```bash
+git clone https://github.com/yourusername/campushub.git
+cd campushub
+```
+
+### 2. Set up the backend
+```bash
+cd server
+npm install
+# create and fill in .env as shown above
+npm run dev
+```
+The API will start on `http://localhost:5000`.
+
+### 3. Set up the frontend
+```bash
+cd client
+npm install
+npm start
+```
+The app will open on `http://localhost:3000`.
+
+### 4. Create the database
+If using MySQL, create the database before starting the server:
+```sql
+CREATE DATABASE campushub_db;
+```
+Sequelize will automatically create/sync all tables on server startup.
+
+---
+
+## 🔑 Authentication Flow
+
+1. User registers with a college email matching one of `COLLEGE_EMAIL_DOMAINS`
+2. A verification email is sent with a time-limited token link
+3. User must verify their email before they're allowed to log in
+4. On login, a JWT is issued and used to authorize protected routes
+
+---
+
+## 🤝 Contributing
+
+This is currently a solo/student project. Suggestions and issues are welcome via GitHub Issues.
+
+## 📄 License
+
+Not yet licensed — all rights reserved by the project author unless stated otherwise.
